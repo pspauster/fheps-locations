@@ -12,8 +12,16 @@ column_names <- extract_list[[1]][1,]
 names(extract_df) <- column_names
 
 fheps_payments <- extract_df %>% 
-  clean_names()
-#format other columns
+  clean_names() %>% 
+  mutate(cfheps_amount = as.numeric(str_replace_all(cfheps_amount, "[$,]", "")),
+         month = my(month))
 
 fheps_payments %>% write_csv("data/fheps_payments_2023q4.csv")
+
+fheps_payments %>% 
+  group_by(zip) %>% 
+  summarize(number_payments = n(),
+            total_payments = sum(cfheps_amount, na.rm = T)) %>% 
+  arrange(desc(number_payments)) %>% 
+  write_csv("data/payments_by_zip.csv")
 
