@@ -56,3 +56,16 @@ joined %>%
   mutate(   prop_pop = pop/sum(pop)*100,
             prop_vouchers = vouchers/sum(vouchers)*100)
 
+top10_zip <- joined %>%
+  arrange(desc(no_payments)) %>% 
+  head(10) %>% 
+  pull(zip)
+
+joined %>%
+  filter(nyc == T) %>% 
+  mutate(top10 = if_else(zip %in% top10_zip, T, F)) %>% 
+  group_by(top10) %>% 
+  summarize(zips = n(),
+            med_inc = mean(medincomeE,na.rm=T),
+            pop = sum(prop_pop, na.rm = T),
+            vouchers = sum(prop_vouchers, na.rm = T))
