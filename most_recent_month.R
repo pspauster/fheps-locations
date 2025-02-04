@@ -1,13 +1,16 @@
 library(tidyverse)
 library(tidycensus)
 
-march24_sum <- read_csv("data/LL145_reports_all_months.csv") %>% 
-  filter(month == as.Date("2024-03-01")) %>% 
+sept24_sum <- read_csv("reports/excel/LL145-Report-CY2024SEPT.csv") %>% 
+  clean_names() %>% 
+  #filter(month == as.Date("2024-03-01")) %>% 
+  mutate(cfheps_amount = as.numeric(str_replace_all(cfheps_amount, "[$,]", "")),
+         month = parse_date_time(month, orders = c("my", "mdy"))) %>% 
   group_by(zip=as.character(zip)) %>% 
   summarize(no_payments = n(),
             amount_total = sum(cfheps_amount, na.rm = T))
 
-vars <- load_variables(2022, acs5, cache=T)
+vars <- load_variables(2022, "acs5", cache=T)
 
 #check the population merging for population double counting.
 
@@ -32,7 +35,7 @@ zip_census <- get_acs(
         output = "wide") 
   #filter(GEOID %in% nyc_zips)
 
-joined <- full_join(march24_sum, nyc_zips_df, by = c("zip"="label")) %>% 
+joined <- full_join(sept24_sum, nyc_zips_df, by = c("zip"="label")) %>% 
   mutate(no_payments = if_else(is.na(no_payments), 0 , no_payments),
          nyc = if_else(!is.na(pop_est), T, F)) %>% 
   left_join(zip_census, by = c("zip" = "GEOID")) %>% 
@@ -45,7 +48,7 @@ joined <- full_join(march24_sum, nyc_zips_df, by = c("zip"="label")) %>%
          prop_pop = (pop_est/total_pop)*100,
          prop_vouchers = no_payments/total_vouchers*100)
 
-write_csv(joined, "data/march24_zip_sum.csv")
+write_csv(joined, "data/sept24_zip_sum.csv")
 
 #stats for piece
 joined %>%
